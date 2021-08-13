@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html><html><head><title>FPGA-ROBOT</title></head><body style='font-size: 15pt'>
+
+<h1 style='text-align: center; margin: 10px; background-color: #0B1EF5; color: #FFFFFF'> Mobile Robot WiFi Remote Interface </h1>
+
+<div style='text-align: center; margin: 10px; padding-bottom: 15px; background-color: #0B77F5' class='input'>
+  
+  <h2>Waypoints</h2>
+
+  <button style='background-color: #F30700; border-radius: 10px; margin-bottom:10px' type='button' onClick=location.href='/BEGIN'><h3> Set begin </h3></button><br>
+
+  <div style='column-count: 8; column-rule-style: solid; column-rule-width: 1px; margin-bottom: 10px'>
+    <label>x_n: 0.0m </label><br><label>y_n: 0.0m </label><br><label>theta_n: 90.0deg </label><br>
+    <button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START1'><h3> Start 1 </h3></button><br>
+
+    <label>x_n: 0.0m </label><br><label>y_n: 1.0m </label><br><label>theta_n: 90.0deg </label><br>
+    <button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START2'><h3> Start 2 </h3></button><br>
+
+    <label>x_n: 1.0m </label><br><label>y_n: 0.0m </label><br><label>theta_n: 90.0deg </label><br>
+    <button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START3'><h3> Start 3 </h3></button><br>
+
+    <label>x_n: 0.0m </label><br><label>y_n: -1.0m </label><br><label>theta_n: 90.0deg </label><br>
+    <button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START4'><h3> Start 4 </h3></button><br>
+
+    <label>x_n: -1.0m </label><br><label>y_n: 0.0m </label><br><label>theta_n: 90.0deg </label><br>
+    <button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START5'><h3> Start 5 </h3></button><br>
+
+    <label>x_n: 2.0m </label><br><label>y_n: 2.0m </label><br><label>theta_n: 90.0deg </label><br>
+    <button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START6'><h3> Start 6 </h3></button><br>
+
+    <label>x_n: -3.0m </label><br><label>y_n: -3.0m </label><br><label>theta_n: 90.0deg </label><br>
+    <button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START7'><h3> Start 7 </h3></button><br>
+
+    <label>x_n: -1.0m </label><br><label>y_n: 3.0m </label><br><label>theta_n: 90.0deg </label><br>
+    <button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START8'><h3> Start 8 </h3></button><br>
+  </div>
+
+  <button style='background-color: #F30700; border-radius: 10px; margin:5px' type='button' onClick=location.href='/STOP'><h3> Stop </h3></button><br>
+  <label> Current command: </label><label style='background-color: white; padding: 2px'> XXXXX </label>
+</div>
+
+
+<div style='text-align: center; margin: 10px; padding-bottom: 15px; background-color: #19ACEF' class='output'>
+  <h2>Current Position</h2>
+  <label>x_i: </label><label style='background-color: white; padding: 2px'> ex. +13.85m </label><br>
+  <label>y_i: </label><label style='background-color: white; padding: 2px'> ex. -10.26m </label><br>
+  <label>theta_i: </label><label style='background-color: white; padding: 2px'> ex. +90.03deg </label><br>
+  <label> </label><br>
+
+  <a href='https://imgbb.com/'><img src='https://i.ibb.co/x2kWKYj/top-view-robot.jpg' alt='top-view-robot' border='2'></a>
+
+  <h2>Current RPMs</h2>
+  <label>w_1: </label><label style='background-color: white; padding: 2px'> ex. +130rpm </label><br>
+  <label>w_2: </label><label style='background-color: white; padding: 2px'> ex. -102rpm </label><br>
+  <label>w_3: </label><label style='background-color: white; padding: 2px'> ex. +220rpm </label><br>
+  <label>w_4: </label><label style='background-color: white; padding: 2px'> ex. -100rpm </label><br>
+
+  <h2>Current Distances</h2>
+  <label>d_1: </label><label style='background-color: white; padding: 2px'> ex. +1.5m </label><br>
+  <label>d_2: </label><label style='background-color: white; padding: 2px'> ex. +1.4m </label><br>
+  <label>d_3: </label><label style='background-color: white; padding: 2px'> ex. +2.2m </label><br>
+  <label>d_4: </label><label style='background-color: white; padding: 2px'> ex. +3.1m </label><br>
+</div>
+
+
+<div style='text-align: center; margin: 10px; padding-bottom: 15px; background-color: #11C7F5' class='debug'>
+  <h2>IMU Measurements</h2>
+  <label>accel_x: </label><label style='background-color: white; padding: 2px'> ex. 1.0g </label><br>
+  <label>accel_y: </label><label style='background-color: white; padding: 2px'> ex. 2.0g </label><br>
+  <label>gyro_z: </label><label style='background-color: white; padding: 2px'> ex. 1.3deg/s </label><br>
+
+  <h2>Behavior</h2>
+  <label style='background-color: white; padding: 2px'> ex. Go to Goal </label><br>
+</div>
+
+</body></html>
