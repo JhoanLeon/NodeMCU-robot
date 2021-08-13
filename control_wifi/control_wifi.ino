@@ -2,21 +2,12 @@
 #include <Ticker.h>
 
 #define wifi_led D4    // pin on ESP12E board and it's negative
-
-#define led_stop        D0 // pin to control through WiFi
-#define led_waypoint1   D1 // pin to control through WiFi
-#define led_waypoint2   D2 // pin to control through WiFi
-#define led_waypoint3   D3 // pin to control through WiFi
-#define led_waypoint4   D4 // pin to control through WiFi
-#define led_waypoint5   D5 // pin to control through WiFi
-#define led_waypoint6   D6 // pin to control through WiFi
-#define led_waypoint7   D7 // pin to control through WiFi
-#define led_waypoint8   D8 // pin to control through WiFi
+#define stop_led D0    // pin to control through WiFi (as indicator)
 
 String ssid = "CLARO-C84A";
 String password = "Cl4r0@F2C84A";
 
-byte command = 0; // byte to code nine commands (8 waypoints and 1 stop) 0 = stop; 1 = waypoint1; 2 = waypoint2; ... 8 = waypoint8;
+byte command = 0; // byte to code ten commands (1 begin, 8 waypoints, 1 stop) 0 = begin; 1 = waypoint1; 2 = waypoint2; ... 8 = waypoint8; 9 = stop;
 
 WiFiServer server(80);
 
@@ -36,58 +27,54 @@ void blink_led() // to indicate while connecting WiFi
 
 void send_command(byte current_command) // to send through SPI command from WebPage
 {
-  // turn off all leds
-  digitalWrite(led_stop, LOW);
-  digitalWrite(led_waypoint1, LOW);
-  digitalWrite(led_waypoint2, LOW);
-  digitalWrite(led_waypoint3, LOW);
-  digitalWrite(led_waypoint4, LOW);
-  digitalWrite(led_waypoint5, LOW);
-  digitalWrite(led_waypoint6, LOW);
-  digitalWrite(led_waypoint7, LOW);
-  digitalWrite(led_waypoint8, LOW); 
-
-  // turn on current command on leds
+  digitalWrite(stop_led, LOW);
+  
+  // determine current command
   switch (current_command) 
   {
     case 0:
-      digitalWrite(led_stop, HIGH);
+      Serial.println("begin command");
     break; 
     
     case 1:
-      digitalWrite(led_waypoint1, HIGH);
+      Serial.println("waypoint 1");
     break;
     
     case 2:
-      digitalWrite(led_waypoint2, HIGH);
+      Serial.println("waypoint 2");
     break;
 
     case 3:
-      digitalWrite(led_waypoint3, HIGH);
+      Serial.println("waypoint 3");
     break;
 
     case 4:
-      digitalWrite(led_waypoint4, HIGH);
+      Serial.println("waypoint 4");
     break;
 
     case 5:
-      digitalWrite(led_waypoint5, HIGH);
+      Serial.println("waypoint 5");
     break;
 
     case 6:
-      digitalWrite(led_waypoint6, HIGH);
+      Serial.println("waypoint 6");
     break;
 
     case 7:
-      digitalWrite(led_waypoint7, HIGH);
+      Serial.println("waypoint 7");
     break;
 
     case 8:
-      digitalWrite(led_waypoint8, HIGH);
+      Serial.println("waypoint 8");
+    break;
+
+    case 9:
+      Serial.println("stop command");
+      digitalWrite(stop_led, HIGH);
     break;
     
     default:
-      digitalWrite(led_stop, HIGH);
+      Serial.println("begin command");
     break;
   }
 
@@ -103,15 +90,7 @@ void read_command() // to read commands from SPI and publish values on WebPage
 void setup() 
 {
   pinMode(wifi_led, OUTPUT);
-  pinMode(led_stop, OUTPUT);
-  pinMode(led_waypoint1, OUTPUT);
-  pinMode(led_waypoint2, OUTPUT);
-  pinMode(led_waypoint3, OUTPUT);
-  pinMode(led_waypoint4, OUTPUT);
-  pinMode(led_waypoint5, OUTPUT);
-  pinMode(led_waypoint6, OUTPUT);
-  pinMode(led_waypoint7, OUTPUT);
-  pinMode(led_waypoint8, OUTPUT);
+  pinMode(stop_led, OUTPUT);
   
   // Begin serial port with PC
   Serial.begin(115200);
@@ -144,7 +123,7 @@ void setup()
     Serial.println("*****************************************");
 
     server.begin(); // starts web server
-    digitalWrite(led_stop, HIGH); // turn on stop led
+    digitalWrite(stop_led, HIGH); // turn on stop led
   }
   else // no connection
   {
@@ -180,7 +159,7 @@ void loop()
 
   client.flush(); // clear client's request buffer   
 
-  if (request.indexOf("/STOP") != -1)
+  if (request.indexOf("/BEGIN") != -1)
   {
     command = 0;
   }
@@ -216,6 +195,10 @@ void loop()
   {
     command = 8;
   }
+  if (request.indexOf("/STOP") != -1)
+  {
+    command = 9;
+  }
   
   send_command(command); // send command through SPI
   read_command(); // read commands from SPI
@@ -228,7 +211,10 @@ void loop()
   client.println("<!DOCTYPE html><html><head><title>FPGA-ROBOT</title></head><body style='font-size: 15pt'>");
   client.println("<h1 style='text-align: center; margin: 10px; background-color: #0B1EF5; color: #FFFFFF'> Mobile Robot WiFi Remote Interface </h1>");
   client.println("<div style='text-align: center; margin: 10px; padding-bottom: 15px; background-color: #0B77F5' class='input'>");
+  
   client.println("<h2>Waypoints</h2>");
+
+  client.println("<button style='background-color: #F30700; border-radius: 10px; margin-bottom:10px' type='button' onClick=location.href='/BEGIN'><h3> Set begin </h3></button><br>");
   
   client.println("<div style='column-count: 8; column-rule-style: solid; column-rule-width: 1px; margin-bottom: 10px'>");
   
@@ -255,16 +241,51 @@ void loop()
   
   client.println("<label>x_n: -1.0m </label><br><label>y_n: 3.0m </label><br><label>theta_n: 90.0deg </label><br>");
   client.println("<button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START8'><h3> Start 8 </h3></button><br>");
-
   client.println("</div>");
   
-  client.println("<button style='background-color: #F53711; border-radius: 10px; margin:5px' type='button' onClick=location.href='/STOP'><h3> Stop </h3></button><br>");
+  client.println("<button style='background-color: #F30700; border-radius: 10px; margin:5px' type='button' onClick=location.href='/STOP'><h3> Stop </h3></button><br>");
   
   if (command == 0)
+    client.println("<label> Current command: </label><label style='background-color: white; padding: 2px'> BEGIN </label>");
+  else if (command == 9)
     client.println("<label> Current command: </label><label style='background-color: white; padding: 2px'> STOP </label>");
   else
     client.println("<label> Current command: </label><label style='background-color: white; padding: 2px'> WAYPOINT " + String(command) + " </label>");
     
+  client.println("</div>");
+
+  client.println("<div style='text-align: center; margin: 10px; padding-bottom: 15px; background-color: #19ACEF' class='output'>");
+  client.println("<h2>Current Position</h2>");
+  client.println("<label>x_i: </label><label style='background-color: white; padding: 2px'> ex. +13.85m </label><br>");
+  client.println("<label>y_i: </label><label style='background-color: white; padding: 2px'> ex. -10.26m </label><br>");
+  client.println("<label>theta_i: </label><label style='background-color: white; padding: 2px'> ex. +90.03deg </label><br>");
+  client.println("<label> </label><br>"); // this tag is empty for space
+  
+  client.println("<a href='https://imgbb.com/'><img src='https://i.ibb.co/x2kWKYj/top-view-robot.jpg' alt='top-view-robot' border='2'></a>");
+  
+  client.println("<h2>Current RPMs</h2>");
+  client.println("<label>w_1: </label><label style='background-color: white; padding: 2px'> ex. +130rpm </label><br>");
+  client.println("<label>w_2: </label><label style='background-color: white; padding: 2px'> ex. -102rpm </label><br>");
+  client.println("<label>w_3: </label><label style='background-color: white; padding: 2px'> ex. +220rpm </label><br>");
+  client.println("<label>w_4: </label><label style='background-color: white; padding: 2px'> ex. -100rpm </label><br>");
+  
+  client.println("<h2>Current Distances</h2>");
+  client.println("<label>d_1: </label><label style='background-color: white; padding: 2px'> ex. +1.5m </label><br>");
+  client.println("<label>d_2: </label><label style='background-color: white; padding: 2px'> ex. +1.4m </label><br>");
+  client.println("<label>d_3: </label><label style='background-color: white; padding: 2px'> ex. +2.2m </label><br>");
+  client.println("<label>d_4: </label><label style='background-color: white; padding: 2px'> ex. +3.1m </label><br>");
+  
+  client.println("</div>");
+  
+  client.println("<div style='text-align: center; margin: 10px; padding-bottom: 15px; background-color: #11C7F5' class='debug'>");
+  client.println("<h2>IMU Measurements</h2>");
+  client.println("<label>accel_x: </label><label style='background-color: white; padding: 2px'> ex. 1.0g </label><br>");
+  client.println("<label>accel_y: </label><label style='background-color: white; padding: 2px'> ex. 2.0g </label><br>");
+  client.println("<label>gyro_z: </label><label style='background-color: white; padding: 2px'> ex. 1.3deg/s </label><br>");
+ 
+  client.println("<h2>Behavior</h2>");
+  client.println("<label style='background-color: white; padding: 2px'> ex. Go to Goal </label><br>");
+  
   client.println("</div>");
 
   client.println("</body></html>");
