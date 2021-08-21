@@ -1,7 +1,19 @@
+/*
+ * Code made by: Jhoan Esteban León
+ * Contact email: je.leon.e@outlook.com
+*/
+
+////////////////////////////////////
+// Libraries
+////////////////////////////////////
 #include <ESP8266WiFi.h>
 #include <SPI.h>
 #include <Ticker.h>
 
+
+////////////////////////////////////
+// Constants and Variables 
+////////////////////////////////////
 #define wifi_led D4    // pin on ESP12E board and it's negative
 #define stop_led D0    // pin on board to control through WiFi (as indicator and it's negative)
 
@@ -19,27 +31,20 @@ byte cont = 0;
 byte max_int = 50;
 
 // variables for information from robot
-byte x_i = 0;
-byte y_i = 0;
-byte theta_i = 0;
+byte data_position[3] = {0}; // [theta_i, y_i, x_i] [2,1,0]
 
-byte w_1 = 0;
-byte w_2 = 0;
-byte w_3 = 0;
-byte w_4 = 0;
+byte data_rpms[4] = {0}; // [w_4, w_3, w_2, w_1] [3,2,1,0]
 
-byte d_1 = 0;
-byte d_2 = 0;
-byte d_3 = 0;
-byte d_4 = 0;
+byte data_distances[4] = {0}; // [d_4, d_3, d_2, d_1] [3,2,1,0]
 
-byte behavior = 0;
+byte behavior = 0; // byte to decode current robot's behavior
 
-byte accel_x = 0;
-byte accel_y = 0;
-byte gyro_z = 0;
+byte data_imu[3] = {0}; // [gyro_z, accel_y, accel_x] [2,1,0] 
 
 
+////////////////////////////////////
+// Auxiliar functions 
+////////////////////////////////////
 void blink_led() // to indicate while connecting WiFi
 {
   byte state = digitalRead(wifi_led);
@@ -51,7 +56,9 @@ void send_command(byte current_command) // to send command through SPI from WebP
 {
   digitalWrite(stop_led, HIGH); //turn off stop led
 
+  digitalWrite(SS, LOW); // enable condition
   SPI.transfer(current_command); // send through SPI the current command
+  digitalWrite(SS, HIGH); // enable release
   
   switch (current_command) // prints on serial console the current command
   {    
@@ -104,32 +111,59 @@ void send_command(byte current_command) // to send command through SPI from WebP
 }
 
 
-void read_command() // to read commands from SPI and publish values on WebPage
-{
-  // master (NodeMCU) sends p for position, and slave answers with 3 bytes each one for x_i, y_i, theta_i
-//  x_i = 0;
-//  y_i = 0;
-//  theta_i = 0;
+void read_info() // to read information of robot from SPI and publish values on WebPage
+{  
+  // master (NodeMCU) sends p for position, and slave (FPGA) answers with 3 bytes each one for x_i, y_i, theta_i
+  digitalWrite(SS, LOW); // enable condition
+  SPI.transfer('p'); // send char command to request data
+  //SPI.transfer(0x00); // request data from slave
+  for (uint8_t i = 0; i < 3; i++) 
+  {
+    data_position[i] = SPI.transfer(0); // save 3 bytes of info correspondent to x_i, y_i, theta_i
+  } 
+  digitalWrite(SS, HIGH); // enable release
 
-  // master (NodeMCU) sends r for rpms, and slave answers with 4 bytes each one for each wheel (w_i) 
-//  w_1 = 0;
-//  w_2 = 0;
-//  w_3 = 0;
-//  w_4 = 0;
 
-  // master (NodeMCU) sends d for distances, and slave answers with 4 bytes each one for each proximity sensor (d_i)
-//  d_1 = 0;
-//  d_2 = 0;
-//  d_3 = 0;
-//  d_4 = 0;
+  // master (NodeMCU) sends r for rpms, and slave (FPGA) answers with 4 bytes each one for each wheel (w_i) 
+  digitalWrite(SS, LOW); // enable condition
+  SPI.transfer('r'); // send char command to request data
+  //SPI.transfer(0x00); // request data from slave
+  for (uint8_t i = 0; i < 4; i++) 
+  {
+    data_rpms[i] = SPI.transfer(0); // save 4 bytes of info correspondent to each wheel w_i
+  } 
+  digitalWrite(SS, HIGH); // enable release
 
-  // master (NodeMCU) sends b for behavior, and slave answers with 1 byte to represent aproximately 5 behaviors or states
-//  behavior = 0;
+
+  // master (NodeMCU) sends d for distances, and slave (FPGA) answers with 4 bytes each one for each proximity sensor (d_i)
+  digitalWrite(SS, LOW); // enable condition
+  SPI.transfer('d'); // send char command to request data
+  //SPI.transfer(0x00); // request data from slave
+  for (uint8_t i = 0; i < 4; i++) 
+  {
+    data_distances[i] = SPI.transfer(0); // save 4 bytes of info correspondent to each proximity sensor d_i
+  } 
+  digitalWrite(SS, HIGH); // enable release
+
+
+  // master (NodeMCU) sends b for behavior, and slave (FPGA) answers with 1 byte to represent aproximately 5 behaviors or states
+  digitalWrite(SS, LOW); // enable condition
+  SPI.transfer('b'); // send char command to request data
+  //SPI.transfer(0x00); // request data from slave
+  behavior = SPI.transfer(0); // byte to decode robot behaviors
+  digitalWrite(SS, HIGH); // enable release
+
     
-  // master (NodeMCU) sends m for imu measurements, and slave answers with 3 bytes each one for each IMU relevant variable (accel_x, accel_y, gyro_z)
-//  accel_x = 0; 
-//  accel_y = 0;
-//  gyro_z = 0;
+  // master (NodeMCU) sends m for imu measurements, and slave (FPGA) answers with 3 bytes each one for each IMU relevant variable (accel_x, accel_y, gyro_z)
+  digitalWrite(SS, LOW); // enable condition
+  SPI.transfer('m'); // send char command to request data
+  //SPI.transfer(0x00); // request data from slave
+  for (uint8_t i = 0; i < 3; i++) 
+  {
+    data_imu[i] = SPI.transfer(0); // save 3 bytes of info correspondent to imu measurements
+  } 
+  digitalWrite(SS, HIGH); // enable release
+
 
   // process information obtained (position needs sign and decimals, rpms needs sign and magnitude, distance needs decimals, behavior just decode number, imu needs sign and decimal)
   Serial.println("read!");
@@ -138,6 +172,9 @@ void read_command() // to read commands from SPI and publish values on WebPage
 }
 
 
+////////////////////////////////////
+// Main functions 
+////////////////////////////////////
 void setup() 
 {
   pinMode(wifi_led, OUTPUT);
@@ -147,8 +184,10 @@ void setup()
   Serial.begin(115200);
   Serial.println("\n");
 
-  // SPI inicialization with hardware pins (SCLK = D5; MISO = D6; MOSI = D7; CS = D8)
+  // SPI inicialization with hardware pins (SCLK = D5; MISO = D6; MOSI = D7; SS = D8)
   SPI.begin();
+  pinMode(SS, OUTPUT);
+  digitalWrite(SS, HIGH);
 
   tic_wifi_led.attach(0.2, blink_led); // blink led every 0.2 seconds (200ms)
 
@@ -193,7 +232,7 @@ void loop()
 {
   WiFiClient client = server.available(); // search on server for a new client
 
-  read_command(); // read current information of robot from SPI
+  read_info(); // read current information of robot from SPI
   
   if (!client)
   {
@@ -312,24 +351,24 @@ void loop()
   client.println("<button onClick='window.location.reload();'>Refresh Data</button>");
   
   client.println("<h2>Current Position</h2>");
-  client.println("<label>x_i: </label><label style='background-color: white; padding: 2px'> " + String(x_i) + "m </label><br>");
-  client.println("<label>y_i: </label><label style='background-color: white; padding: 2px'> " + String(y_i) + "m </label><br>");
-  client.println("<label>theta_i: </label><label style='background-color: white; padding: 2px'> " + String(theta_i) + "deg </label><br>");
+  client.println("<label>x_i: </label><label style='background-color: white; padding: 2px'> " + String(data_position[0]) + "m </label><br>");
+  client.println("<label>y_i: </label><label style='background-color: white; padding: 2px'> " + String(data_position[1]) + "m </label><br>");
+  client.println("<label>theta_i: </label><label style='background-color: white; padding: 2px'> " + String(data_position[2]) + "deg </label><br>");
   client.println("<label> </label><br>"); // this tag is empty for space organization
   
   client.println("<a href='https://imgbb.com/'><img src='https://i.ibb.co/x2kWKYj/top-view-robot.jpg' alt='top-view-robot' border='2'></a>");
   
   client.println("<h2>Current RPMs</h2>");
-  client.println("<label>w_1: </label><label style='background-color: white; padding: 2px'> " + String(w_1) + "rpm </label><br>");
-  client.println("<label>w_2: </label><label style='background-color: white; padding: 2px'> " + String(w_2) + "rpm </label><br>");
-  client.println("<label>w_3: </label><label style='background-color: white; padding: 2px'> " + String(w_3) + "rpm </label><br>");
-  client.println("<label>w_4: </label><label style='background-color: white; padding: 2px'> " + String(w_4) + "rpm </label><br>");
+  client.println("<label>w_1: </label><label style='background-color: white; padding: 2px'> " + String(data_rpms[0]) + "rpm </label><br>");
+  client.println("<label>w_2: </label><label style='background-color: white; padding: 2px'> " + String(data_rpms[1]) + "rpm </label><br>");
+  client.println("<label>w_3: </label><label style='background-color: white; padding: 2px'> " + String(data_rpms[2]) + "rpm </label><br>");
+  client.println("<label>w_4: </label><label style='background-color: white; padding: 2px'> " + String(data_rpms[3]) + "rpm </label><br>");
   
   client.println("<h2>Current Distances</h2>");
-  client.println("<label>d_1: </label><label style='background-color: white; padding: 2px'> " + String(d_1) + "m </label><br>");
-  client.println("<label>d_2: </label><label style='background-color: white; padding: 2px'> " + String(d_2) + "m </label><br>");
-  client.println("<label>d_3: </label><label style='background-color: white; padding: 2px'> " + String(d_3) + "m </label><br>");
-  client.println("<label>d_4: </label><label style='background-color: white; padding: 2px'> " + String(d_4) + "m </label><br>");
+  client.println("<label>d_1: </label><label style='background-color: white; padding: 2px'> " + String(data_distances[0]) + "m </label><br>");
+  client.println("<label>d_2: </label><label style='background-color: white; padding: 2px'> " + String(data_distances[1]) + "m </label><br>");
+  client.println("<label>d_3: </label><label style='background-color: white; padding: 2px'> " + String(data_distances[2]) + "m </label><br>");
+  client.println("<label>d_4: </label><label style='background-color: white; padding: 2px'> " + String(data_distances[3]) + "m </label><br>");
 
   client.println("<h2>Current Behavior</h2>");
   client.println("<label style='background-color: white; padding: 2px'> " + String(behavior) + " state </label><br>");
@@ -338,9 +377,9 @@ void loop()
 
   client.println("<div style='text-align: center; margin: 10px; padding-bottom: 15px; background-color: #11C7F5' class='debug'>");
   client.println("<h2>IMU Measurements</h2>");
-  client.println("<label>accel_x: </label><label style='background-color: white; padding: 2px'> " + String(accel_x) + "g </label><br>");
-  client.println("<label>accel_y: </label><label style='background-color: white; padding: 2px'> " + String(accel_y) + "g </label><br>");
-  client.println("<label>gyro_z: </label><label style='background-color: white; padding: 2px'> " + String(gyro_z) + "deg/s </label><br>");
+  client.println("<label>accel_x: </label><label style='background-color: white; padding: 2px'> " + String(data_imu[0]) + "g </label><br>");
+  client.println("<label>accel_y: </label><label style='background-color: white; padding: 2px'> " + String(data_imu[1]) + "g </label><br>");
+  client.println("<label>gyro_z: </label><label style='background-color: white; padding: 2px'> " + String(data_imu[2]) + "deg/s </label><br>");
  
   client.println("</div>");
 
