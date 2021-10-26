@@ -17,10 +17,10 @@
 #define wifi_led D4    // pin on ESP12E board and it's negative
 #define stop_led D0    // pin on board to control through WiFi (as indicator and it's negative)
 
-String ssid = "CLARO-C84A";
-String password = "Cl4r0@F2C84A";
+String ssid = "RobocolURC";
+String password = "Robocol8102";
 
-byte command = 9; // byte to decode 10 commands (begin, 8 waypoints, stop) 1 = waypoint1; 2 = waypoint2; ... 8 = waypoint8; 9 = stop; 10 = begin; 
+byte command = 9; // byte to decode 10 commands (8 waypoints, stop, begin) 1 = waypoint1; 2 = waypoint2; ... 8 = waypoint8; 9 = stop; 10 = begin; 
 
 WiFiServer server(80);
 
@@ -28,7 +28,6 @@ Ticker tic_wifi_led;
 
 // variables to connect WiFi
 byte cont = 0;
-byte max_int = 50;
 
 // variables for information from robot
 byte x_i = 0;
@@ -122,9 +121,6 @@ void read_info() // to read information of robot from SPI and publish values on 
   gyro_z = SPI.transfer(0x00); // assign
   digitalWrite(SS, HIGH); // enable release  
 
-  // process information obtained (position needs sign and decimals, rpms needs sign and magnitude, distance needs decimals, behavior just decode number, imu needs sign and decimal)
-
-  Serial.println("read!");
   delay(500);
 }
 
@@ -150,7 +146,7 @@ void setup()
 
   // WiFi connection
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED and cont < max_int) // wait until connection or max attempts (50)
+  while (WiFi.status() != WL_CONNECTED and cont < 50) // wait until connection or max attempts (50)
   {
     Serial.print(".");
     delay(500);
@@ -160,7 +156,7 @@ void setup()
   tic_wifi_led.detach();
   Serial.println("\n");
 
-  if (cont < max_int) // connection successfull
+  if (cont < 50) // connection successfull
   {
     digitalWrite(wifi_led, LOW); // turn on wifi led
     Serial.println("*****************************************");
@@ -168,8 +164,6 @@ void setup()
     Serial.println(WiFi.SSID());
     Serial.print("IP: ");
     Serial.println(WiFi.localIP());
-    Serial.print("MAC ADRESS: ");
-    Serial.println(WiFi.macAddress());
     Serial.println("*****************************************");
 
     server.begin(); // starts web server
@@ -282,13 +276,13 @@ void loop()
   client.println("<label>x_n: -1.0m </label><br><label>y_n: 0.0m </label><br><label>theta_n: 90.0deg </label><br>");
   client.println("<button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START5'><h3> Start 5 </h3></button><br>");
   
-  client.println("<label>x_n: 2.0m </label><br><label>y_n: 2.0m </label><br><label>theta_n: 90.0deg </label><br>");
+  client.println("<label>x_n: 0.5m </label><br><label>y_n: 0.5m </label><br><label>theta_n: 90.0deg </label><br>");
   client.println("<button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START6'><h3> Start 6 </h3></button><br>");
   
-  client.println("<label>x_n: -3.0m </label><br><label>y_n: -3.0m </label><br><label>theta_n: 90.0deg </label><br>");
+  client.println("<label>x_n: -0.5m </label><br><label>y_n: -0.5m </label><br><label>theta_n: 90.0deg </label><br>");
   client.println("<button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START7'><h3> Start 7 </h3></button><br>");
   
-  client.println("<label>x_n: -1.0m </label><br><label>y_n: 3.0m </label><br><label>theta_n: 90.0deg </label><br>");
+  client.println("<label>x_n: 0.25m </label><br><label>y_n: 0.75m </label><br><label>theta_n: 90.0deg </label><br>");
   client.println("<button style='background-color: #24DB1F; border-radius: 10px; margin:5px' type='button' onClick=location.href='/START8'><h3> Start 8 </h3></button><br>");
   client.println("</div>");
   
@@ -308,8 +302,8 @@ void loop()
   client.println("<button onClick='window.location.reload();'>Refresh Data</button>");
   
   client.println("<h2>Current Position</h2>");
-  client.println("<label>x_i: </label><label style='background-color: white; padding: 2px'> " + String(x_i) + "m </label><br>");
-  client.println("<label>y_i: </label><label style='background-color: white; padding: 2px'> " + String(y_i) + "m </label><br>");
+  client.println("<label>x_i: </label><label style='background-color: white; padding: 2px'> " + String(x_i) + "cm </label><br>");
+  client.println("<label>y_i: </label><label style='background-color: white; padding: 2px'> " + String(y_i) + "cm </label><br>");
   client.println("<label>theta_i: </label><label style='background-color: white; padding: 2px'> " + String(theta_i) + "deg </label><br>");
   client.println("<label> </label><br>"); // this tag is empty for space organization
   
@@ -322,10 +316,10 @@ void loop()
   client.println("<label>w_4: </label><label style='background-color: white; padding: 2px'> " + String(rpm_4) + "rpm </label><br>");
   
   client.println("<h2>Current Distances</h2>");
-  client.println("<label>d_1: </label><label style='background-color: white; padding: 2px'> " + String(d_1) + "m </label><br>");
-  client.println("<label>d_2: </label><label style='background-color: white; padding: 2px'> " + String(d_2) + "m </label><br>");
-  client.println("<label>d_3: </label><label style='background-color: white; padding: 2px'> " + String(d_3) + "m </label><br>");
-  client.println("<label>d_4: </label><label style='background-color: white; padding: 2px'> " + String(d_4) + "m </label><br>");
+  client.println("<label>d_1: </label><label style='background-color: white; padding: 2px'> " + String(d_1) + "cm </label><br>");
+  client.println("<label>d_2: </label><label style='background-color: white; padding: 2px'> " + String(d_2) + "cm </label><br>");
+  client.println("<label>d_3: </label><label style='background-color: white; padding: 2px'> " + String(d_3) + "cm </label><br>");
+  client.println("<label>d_4: </label><label style='background-color: white; padding: 2px'> " + String(d_4) + "cm </label><br>");
 
   client.println("<h2>Current Behavior</h2>");
   client.println("<label style='background-color: white; padding: 2px'> " + String(behavior) + " state </label><br>");
@@ -342,8 +336,6 @@ void loop()
 
   client.println("</body></html>");
   //end of web page
-  
-  delay(1);
   
   if (request.indexOf("/favicon") == -1) // if favicon doesn't apper on request
   {
