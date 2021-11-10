@@ -46,10 +46,6 @@ byte d_4 = 0;
 
 byte behavior = 0; // byte to decode current robot's behavior
 
-byte accel_x = 0;
-byte accel_y = 0;
-byte gyro_z = 0;
-
 
 ////////////////////////////////////
 // Auxiliar functions 
@@ -111,17 +107,10 @@ void read_info() // to read information of robot from SPI and publish values on 
   d_4 = SPI.transfer(byte(50)); // assign
   // master (NodeMCU) request for behavior, and slave (FPGA) answers with 1 byte to represent aproximately 5 behaviors or states
   behavior = SPI.transfer(byte(50));
-  behavior = SPI.transfer(byte(60)); // assign
-  // master (NodeMCU) request for imu measurements, and slave (FPGA) answers with 3 bytes each one for each IMU relevant variable (accel_x, accel_y, gyro_z)
-  accel_x = SPI.transfer(byte(60));
-  accel_x = SPI.transfer(byte(61)); // assign
-  accel_y = SPI.transfer(byte(61));
-  accel_y = SPI.transfer(byte(62)); // assign
-  gyro_z = SPI.transfer(byte(62));  
-  gyro_z = SPI.transfer(0x00); // assign
+  behavior = SPI.transfer(0x00); // assign
   digitalWrite(SS, HIGH); // enable release  
 
-  delay(500);
+  delay(100);
 }
 
 
@@ -325,15 +314,7 @@ void loop()
   client.println("<label style='background-color: white; padding: 2px'> " + String(behavior) + " state </label><br>");
   
   client.println("</div>");
-
-  client.println("<div style='text-align: center; margin: 10px; padding-bottom: 15px; background-color: #11C7F5' class='debug'>");
-  client.println("<h2>IMU Measurements</h2>");
-  client.println("<label>accel_x: </label><label style='background-color: white; margin: 2px; padding: 2px'> " + String(accel_x) + "g </label><br>");
-  client.println("<label>accel_y: </label><label style='background-color: white; margin: 2px; padding: 2px'> " + String(accel_y) + "g </label><br>");
-  client.println("<label>gyro_z: </label><label style='background-color: white; margin: 2px; padding: 2px'> " + String(gyro_z) + "deg/s </label><br>");
- 
-  client.println("</div>");
-
+  
   client.println("</body></html>");
   //end of web page
   
